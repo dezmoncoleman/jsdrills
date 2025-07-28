@@ -1,10 +1,10 @@
 const questions = [
   {
     question:
-      "What is the keyword to declare a variable. Choose all that apply.",
+      "What is the keyword to declare a permanent variable?",
     answers: [
-      { text: "var", correct: true },
-      { text: "let", correct: true },
+      { text: "var", correct: false},
+      { text: "let", correct: false },
       { text: "int", correct: false },
       { text: "const", correct: true },
     ]
@@ -25,6 +25,7 @@ const answerButtons = document.getElementById("answer-buttons");
 const nextButton = document.getElementById("next-btn");
 
 let currentQuestionIndex = 0;
+let score = 0;
 
 function showQuestion(question) {
   questionContainer.innerHTML = question.question;
@@ -42,13 +43,64 @@ function showQuestion(question) {
 }
 
 function selectAnswer(e) {
-  // For now, just log which button was clicked
-  console.log("Answer selected:", e.target.innerText);
+  const selectedBtn = e.target;
+  const correct = selectedBtn.dataset.correct === "true";
+  setStatusClass(selectedBtn, correct);
+
+  // Disable all buttons and show next
+  Array.from(answerButtons.children).forEach(button => {
+    button.disabled = true;
+    setStatusClass(button, button.dataset.correct === "true");
+  });
+  window.nextButton.style.display = "block";
+
+  // Only increment score the first time an answer is selected for this question
+  if (correct && !selectedBtn.dataset.answered) {
+    score++;
+  }
+  // Mark this question as answered to prevent double scoring
+  Array.from(answerButtons.children).forEach(button => {
+    button.dataset.answered = "true";
+  });
 }
 
+function setStatusClass(element, correct) {
+  element.classList.add(correct ? "correct" : "wrong");
+}
 
+function handleNextButton() {
+  currentQuestionIndex++;
+  if (currentQuestionIndex < questions.length) {
+    showQuestion(questions[currentQuestionIndex]);
+    window.nextButton.style.display = "none";
+  } else {
+    showScore();
+  }
+}
 
-// nextButton.addEventListener("click", handleNextButton);
+function showScore() {
+  const percent = Math.round((score / questions.length) * 100);
+  const passed = percent >= 70;
+  questionContainer.innerText = `Quiz Completed!\nYour Score: ${percent}%\nYou ${passed ? "Pass" : "should try again"}!`;
+  answerButtons.innerHTML = "";
+  window.nextButton.innerText = "Restart";
+  window.nextButton.style.display = "block";
+
+  // Set up restart logic
+  window.nextButton.onclick = function () {
+    currentQuestionIndex = 0;
+    score = 0;
+    window.nextButton.innerText = "Next";
+    window.nextButton.style.display = "none";
+    showQuestion(questions[currentQuestionIndex]);
+    // Restore normal next handler
+    window.nextButton.onclick = handleNextButton;
+  };
+}
+
+// Initial setup
+window.nextButton = nextButton;
+window.nextButton.onclick = handleNextButton;
 
 showQuestion(questions[currentQuestionIndex]);
-nextButton.style.display = "none";
+window.nextButton.style.display = "none";
